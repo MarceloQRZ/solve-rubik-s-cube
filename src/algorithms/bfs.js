@@ -1,56 +1,57 @@
 import { isSolved, cloneCube } from '../cube/cubeManager.js';
 
-// Todos os movimentos possíveis
-const MOVES = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"];
+const movesPossiveis = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"];
 
-export async function bfs(initialCube) {
-  const startTime = performance.now();
+export async function bfs(cuboInicial) {
+  const inicio = performance.now();
 
-  const visited = new Set();
-  const queue = [];
+  let fila = [];
+  let vistos = new Set();
+  let totalNos = 0;
 
-  queue.push({
-    cube: initialCube,
-    path: [],
+  fila.push({
+    estado: cuboInicial,
+    caminho: []
   });
 
-  let expandedNodes = 0;
+  while (fila.length != 0) {
+    let atual = fila[0];
+    fila.splice(0, 1);
 
-  while (queue.length > 0) {
-    const current = queue.shift();
-    const cubeStr = current.cube.asString();
+    let representacao = atual.estado.asString();
 
-    // Evita estados repetidos
-    if (visited.has(cubeStr)) continue;
-    visited.add(cubeStr);
+    if (!vistos.has(representacao)) {
+      vistos.add(representacao);
+      totalNos++;
 
-    expandedNodes++;
+      if (isSolved(atual.estado)) {
+        const fim = performance.now();
 
-    if (isSolved(current.cube)) {
-      const endTime = performance.now();
-      return {
-        path: current.path,
-        steps: current.path.length,
-        time: (endTime - startTime) / 1000, // segundos
-        expandedNodes,
-        memory: queue.length,
-        branchingFactor: (expandedNodes > 1)
-          ? (queue.length / expandedNodes).toFixed(2)
-          : 0,
-      };
-    }
+        let tempoTotal = (fim - inicio) / 1000;
 
-    for (const move of MOVES) {
-      const newCube = cloneCube(current.cube);
-      newCube.move(move);
+        return {
+          path: atual.caminho,
+          steps: atual.caminho.length,
+          time: tempoTotal,
+          expandedNodes: totalNos,
+          memory: fila.length,
+          branchingFactor: totalNos > 0 ? (fila.length / totalNos).toFixed(2) : 0
+        };
+      }
 
-      queue.push({
-        cube: newCube,
-        path: [...current.path, move],
-      });
+      for (let i = 0; i < movesPossiveis.length; i++) {
+        let copia = cloneCube(atual.estado);
+        copia.move(movesPossiveis[i]);
+
+        let novo = {
+          estado: copia,
+          caminho: atual.caminho.concat([movesPossiveis[i]])
+        };
+
+        fila.push(novo);
+      }
     }
   }
 
-  // Caso não encontre solução (não deve ocorrer com estados gerados)
   return null;
 }

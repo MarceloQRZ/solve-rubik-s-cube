@@ -19,7 +19,6 @@ export function applyMoves(cube, moves) {
   return cube;
 }
 
-// Gera uma sequência de N movimentos aleatórios válidos
 export function generateRandomMoves(n) {
   const possibleMoves = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"];
   const moves = [];
@@ -30,7 +29,6 @@ export function generateRandomMoves(n) {
   return moves.join(' ');
 }
 
-// Cria um cubo embaralhado a partir do resolvido
 export function createScrambledCube(n) {
   const cube = createSolvedCube();
   const moves = generateRandomMoves(n);

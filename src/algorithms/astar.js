@@ -1,83 +1,93 @@
 import { MinPriorityQueue } from '@datastructures-js/priority-queue';
 import Cube from 'cubejs';
-import { misplacedStickersHeuristic } from '../utils/heuristics.js';
 import { isSolved } from '../cube/cubeManager.js';
+import { heuristicaQtdErrado } from '../utils/heuristics.js';
 
 Cube.initSolver();
 
-const MOVES = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"];
+const movimentosAstar = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"];
 
-export async function astar(initialCube) {
-  const startTime = performance.now();
+export async function astar(cuboInicial) {
+  let comeco = performance.now();
 
-  const queue = new MinPriorityQueue((node) => node.f);
-  const visited = new Set();
-
-  const initialStateStr = initialCube.asString();
-
-  queue.enqueue({
-    stateStr: initialStateStr,
-    path: [],
-    g: 0,
-    f: misplacedStickersHeuristic(initialCube)
+  let filaPrioridade = new MinPriorityQueue(function (no) {
+    return no.f;
   });
 
-  let expandedNodes = 0;
-  let memoryPeak = 0;
+  let explorados = new Set();
 
-  while (!queue.isEmpty()) {
-    memoryPeak = Math.max(memoryPeak, queue.size());
+  let inicioStr = cuboInicial.asString();
 
-    const dequeued = queue.dequeue();
+  let primeiro = {
+    estado: inicioStr,
+    caminho: [],
+    custo: 0,
+    f: heuristicaQtdErrado(cuboInicial)
+  };
 
-if (!dequeued || !dequeued.item || !dequeued.item.stateStr) {
-  continue;  // Ignora se o item for inválido
-}
+  filaPrioridade.enqueue(primeiro);
 
-const current = dequeued.item;
-const currentCube = Cube.fromString(current.stateStr);
+  let nosVisitados = 0;
+  let picoMemoria = 0;
 
-
-    // Verifica se já visitado
-    if (visited.has(current.stateStr)) continue;
-    visited.add(current.stateStr);
-
-    expandedNodes++;
-
-    // Testa se está resolvido
-    if (isSolved(currentCube)) {
-      const endTime = performance.now();
-      return {
-        path: current.path,
-        steps: current.path.length,
-        time: (endTime - startTime) / 1000,
-        expandedNodes,
-        memory: memoryPeak,
-        branchingFactor: (memoryPeak / expandedNodes).toFixed(2)
-      };
+  while (!filaPrioridade.isEmpty()) {
+    if (filaPrioridade.size() > picoMemoria) {
+      picoMemoria = filaPrioridade.size();
     }
 
-    // Gera sucessores
-    for (const move of MOVES) {
-      const nextCube = Cube.fromString(current.stateStr);
-      nextCube.move(move);
-      const nextStateStr = nextCube.asString();
+    let atualNo = filaPrioridade.dequeue();
+    if (!atualNo || !atualNo.item || !atualNo.item.estado) {
+      continue;
+    }
 
-      if (!visited.has(nextStateStr)) {
-        const g = current.g + 1;
-        const h = misplacedStickersHeuristic(nextCube);
-        const f = g + h;
+    let atual = atualNo.item;
+    let cuboAtual = Cube.fromString(atual.estado);
 
-        queue.enqueue({
-          stateStr: nextStateStr,
-          path: [...current.path, move],
-          g,
-          f
-        });
+    if (!explorados.has(atual.estado)) {
+      explorados.add(atual.estado);
+      nosVisitados++;
+
+      if (isSolved(cuboAtual)) {
+        let fim = performance.now();
+        return {
+          path: atual.caminho,
+          steps: atual.caminho.length,
+          time: (fim - comeco) / 1000,
+          expandedNodes: nosVisitados,
+          memory: picoMemoria,
+          branchingFactor: nosVisitados > 0 ? (picoMemoria / nosVisitados).toFixed(2) : 0
+        };
+      }
+
+      for (let i = 0; i < movimentosAstar.length; i++) {
+        let tentativa = Cube.fromString(atual.estado);
+        tentativa.move(movimentosAstar[i]);
+
+        let novoEstado = tentativa.asString();
+
+        if (!explorados.has(novoEstado)) {
+          let novoCaminho = [];
+          for (let j = 0; j < atual.caminho.length; j++) {
+            novoCaminho.push(atual.caminho[j]);
+          }
+          novoCaminho.push(movimentosAstar[i]);
+
+          let novoG = atual.custo + 1;
+          let novoH = misplacedStickersHeuristic(tentativa);
+          let novoF = novoG + novoH;
+
+          let novoNo = {
+            estado: novoEstado,
+            caminho: novoCaminho,
+            custo: novoG,
+            f: novoF
+          };
+
+          filaPrioridade.enqueue(novoNo);
+        }
       }
     }
   }
 
-  // Se a fila esvaziar sem encontrar solução
   return null;
 }
