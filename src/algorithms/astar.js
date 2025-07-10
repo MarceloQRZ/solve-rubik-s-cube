@@ -10,9 +10,7 @@ const movimentosAstar = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", 
 export async function astar(cuboInicial) {
   let comeco = performance.now();
 
-  let filaPrioridade = new MinPriorityQueue(function (no) {
-    return no.f;
-  });
+  let filaPrioridade = new MinPriorityQueue({ compare: (a, b) => a.f - b.f });
 
   let explorados = new Set();
 
@@ -36,11 +34,11 @@ export async function astar(cuboInicial) {
     }
 
     let atualNo = filaPrioridade.dequeue();
-    if (!atualNo || !atualNo.item || !atualNo.item.estado) {
+    if (!atualNo || !atualNo.estado) {
       continue;
     }
 
-    let atual = atualNo.item;
+    let atual = atualNo;
     let cuboAtual = Cube.fromString(atual.estado);
 
     if (!explorados.has(atual.estado)) {
@@ -73,7 +71,7 @@ export async function astar(cuboInicial) {
           novoCaminho.push(movimentosAstar[i]);
 
           let novoG = atual.custo + 1;
-          let novoH = misplacedStickersHeuristic(tentativa);
+          let novoH = heuristicaQtdErrado(tentativa);
           let novoF = novoG + novoH;
 
           let novoNo = {

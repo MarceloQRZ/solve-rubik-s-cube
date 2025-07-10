@@ -13,7 +13,7 @@ console.log("\n[Teste 1] Heurística de cubo resolvido (esperado: 0):", heuristi
 const cuboOriginal = new Cube();
 const copiaCubo = cloneCube(cuboOriginal);
 copiaCubo.move("U");
-let cuboMudou = cuboOriginal.asString() !== copiaCubo.asString();
+let cuboMudou = cuboOriginal.asString() === copiaCubo.asString();
 console.log("\n[Teste 2] O cubo original foi alterado após mexer na cópia? (esperado: false):", cuboMudou);
 
 // Teste 3: verificação de resolução
